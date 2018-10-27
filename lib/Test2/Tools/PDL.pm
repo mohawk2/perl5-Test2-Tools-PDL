@@ -8,13 +8,13 @@ use warnings;
 # VERSION
 
 use Safe::Isa;
-use Scalar::Util qw/blessed/;
-use Test2::API qw/context/;
-use Test2::Compare qw/compare strict_convert/;
+use Scalar::Util qw(blessed);
+use Test2::API qw(context);
+use Test2::Compare qw(compare strict_convert);
 use Test2::Compare::Float;
-use Test2::Tools::Compare qw(within);
-use Test2::Util::Table qw/table/;
-use Test2::Util::Ref qw/render_ref/;
+use Test2::Tools::Compare qw(within string);
+use Test2::Util::Table qw(table);
+use Test2::Util::Ref qw(render_ref);
 
 use parent qw/Exporter/;
 our @EXPORT = qw(pdl_ok pdl_is);
@@ -23,7 +23,7 @@ our $TOLERANCE = $Test2::Compare::Float::DEFAULT_TOLERANCE;
 
 =func pdl_ok($thing, $name)
 
-Checks that the given C<$thing> is a L<Data::Frame::More> object.
+Checks that the given C<$thing> is a L<PDL> object.
 
 =cut
 
@@ -45,7 +45,11 @@ sub pdl_ok {
 
 =func pdl_is($got, $exp, $name);
 
-Checks that data frame C<$got> is same as C<$exp>.
+Checks that piddle C<$got> is same as C<$exp>.
+
+Now this method is internally similar as
+C<is($got-E<gt>unpdl, $exp-E<gt>unpdl)>. It's possible to work with both
+numeric PDLs as well as non-numeric PDLs (like L<PDL::Char>, L<PDL::SV>).
 
 =cut
 
@@ -53,28 +57,37 @@ sub pdl_is {
     my ( $got, $exp, $name, @diag ) = @_;
     my $ctx = context();
 
+    my $gotname = render_ref($got);
     unless ( $got->$_DOES('PDL') ) {
-        my $gotname = render_ref($got);
-        $ctx->ok( 0, $name,
-            ["First argument '$gotname' is not a piddle."] );
+        $ctx->ok( 0, $name, ["First argument '$gotname' is not a piddle."] );
         $ctx->release;
         return 0;
     }
     unless ( $exp->$_DOES('PDL') ) {
         my $expname = render_ref($exp);
-        $ctx->ok( 0, $name,
-            ["Second argument '$expname' is not a piddle."] );
+        $ctx->ok( 0, $name, ["Second argument '$expname' is not a piddle."] );
         $ctx->release;
         return 0;
     }
 
-    my $delta = compare($got->unpdl, $exp->unpdl, \&convert); 
+    my $exp_class = ref($exp);
+    unless ( $got->$_DOES($exp_class) ) {
+        $ctx->ok( 0, $name,
+            ["'$gotname' does not match the expected type '$exp_class'."] );
+        $ctx->release;
+        return 0;
+    }
+
+    my $is_numeric = !( $exp->type eq 'byte' or $exp->$_DOES('PDL::SV') );
+
+    my $delta = compare( $got->unpdl, $exp->unpdl,
+        sub { convert( $_[0], $is_numeric ) } );
 
     if ($delta) {
-        $ctx->ok(0, $name, [$delta->table, @diag]);
+        $ctx->ok( 0, $name, [ $delta->table, @diag ] );
     }
     else {
-        $ctx->ok(1, $name);
+        $ctx->ok( 1, $name );
     }
 
     $ctx->release;
@@ -82,10 +95,15 @@ sub pdl_is {
 }
 
 sub convert {
-    my ($check) = @_;
+    my ( $check, $is_numeric ) = @_;
 
-    if (not ref($check)) {
-        return within($check, $TOLERANCE);
+    if ( not ref($check) ) {
+        if ($is_numeric) {
+            return within( $check, $TOLERANCE );
+        }
+        else {
+            return string($check);
+        }
     }
     return strict_convert(@_);
 }
@@ -123,5 +141,5 @@ C<1e-8>.
 
 =head1 SEE ALSO
 
-L<PDL>, L<Test2::Suite> 
+L<PDL>, L<Test2::Suite>, L<Test::PDL>
 

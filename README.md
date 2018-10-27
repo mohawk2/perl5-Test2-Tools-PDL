@@ -26,11 +26,15 @@ pdl_is($got, $expected, 'Same piddle.');
 
 ## pdl\_ok($thing, $name)
 
-Checks that the given `$thing` is a [Data::Frame::More](https://metacpan.org/pod/Data::Frame::More) object.
+Checks that the given `$thing` is a [PDL](https://metacpan.org/pod/PDL) object.
 
 ## pdl\_is($got, $exp, $name);
 
-Checks that data frame `$got` is same as `$exp`.
+Checks that piddle `$got` is same as `$exp`.
+
+Now this method is internally similar as
+`is($got->unpdl, $exp->unpdl)`. It's possible to work with both
+numeric PDLs as well as non-numeric PDLs (like [PDL::Char](https://metacpan.org/pod/PDL::Char), [PDL::SV](https://metacpan.org/pod/PDL::SV)).
 
 # DESCRIPTION 
 
@@ -51,7 +55,7 @@ $Test2::Tools::PDL::TOLERANCE = 0.01;
 
 # SEE ALSO
 
-[PDL](https://metacpan.org/pod/PDL), [Test2::Suite](https://metacpan.org/pod/Test2::Suite) 
+[PDL](https://metacpan.org/pod/PDL), [Test2::Suite](https://metacpan.org/pod/Test2::Suite), [Test::PDL](https://metacpan.org/pod/Test::PDL)
 
 # AUTHOR
 
