@@ -53,7 +53,7 @@ subtest pdl_is => sub {
         };
 
         my $event = $events->[0];
-        ok( $event->pass, 'pdl_is($same_pdl)' );
+        ok( $event->pass, 'pdl_is($pdl)' );
         is( $event->name, $test_name, 'pdl_is() name' );
     }
 

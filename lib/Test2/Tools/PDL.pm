@@ -17,6 +17,8 @@ use Test2::Tools::Compare qw(number within string);
 use Test2::Util::Table qw(table);
 use Test2::Util::Ref qw(render_ref);
 
+use Test2::Compare::PDL;
+
 use parent qw/Exporter/;
 our @EXPORT = qw(pdl_ok pdl_is);
 
@@ -82,8 +84,20 @@ sub pdl_is {
 
     my $is_numeric = !( $exp->type eq 'byte' or $exp->$_DOES('PDL::SV') );
 
-    my $delta = compare( $got->unpdl, $exp->unpdl,
-        sub { convert( $_[0], $is_numeric ) } );
+    my $delta = compare(
+        $got, $exp,
+        sub {
+            convert(
+                $_[0],
+                {
+                    implicit_end => 1,
+                    use_regex    => 0,
+                    use_code     => 0,
+                    is_numeric   => $is_numeric
+                }
+            );
+        }
+    );
 
     if ($delta) {
         $ctx->ok( 0, $name, [ $delta->table, @diag ] );
@@ -97,16 +111,27 @@ sub pdl_is {
 }
 
 sub convert {
-    my ( $check, $is_numeric ) = @_;
+    my ( $thing, $config ) = @_;
+    $config //= {};
 
-    if ( not ref($check) ) {
+    my $is_numeric = $config->{is_numeric};
+
+    if ( $thing->$_DOES('PDL') ) {
+        return Test2::Compare::PDL->new(
+            inref => $thing,
+            $config->{implicit_end} ? ( ending => 1 ) : ()
+        );
+    }
+    elsif ( not ref($thing) ) {
         if ($is_numeric) {
-            return ( ( $TOLERANCE // 0 ) == 0
-                ? number($check)
-                : within( $check, $TOLERANCE ) );
+            return (
+                ( $TOLERANCE // 0 ) == 0
+                ? number($thing)
+                : within( $thing, $TOLERANCE )
+            );
         }
         else {
-              return string($check);
+            return string($thing);
         }
     }
     return strict_convert(@_);
