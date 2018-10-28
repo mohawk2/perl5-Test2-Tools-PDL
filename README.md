@@ -6,7 +6,7 @@ Test2::Tools::PDL - Test2 tools for verifying Perl Data Language piddles
 
 # VERSION
 
-version 0.0001
+version 0.0001\_01
 
 # SYNOPSIS
 
@@ -46,11 +46,22 @@ This module can be configured by some module variables.
 
 ## TOLERANCE
 
-Default is same as `$Test2::Compare::Float::DEFAULT_TOLERANCE`, which is
-`1e-8`.
+Defaultly it's same as `$Test2::Compare::Float::DEFAULT_TOLERANCE`, which
+is `1e-8`. You can override it to adjust the tolerance of numeric
+comparison. The behavior is like ["within" in Test2::Tools::Compare](https://metacpan.org/pod/Test2::Tools::Compare#within).
 
 ```
 $Test2::Tools::PDL::TOLERANCE = 0.01;
+```
+
+You can set this variable to 0 to force exact numeric comparison. In this
+case the behavior is like ["number" in Test2::Tools::Compare](https://metacpan.org/pod/Test2::Tools::Compare#number).
+
+```
+{
+    local $Test2::Tools::PDL::TOLERANCE = 0;
+    ...
+}
 ```
 
 # SEE ALSO

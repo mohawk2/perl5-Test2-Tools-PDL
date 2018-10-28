@@ -2,6 +2,7 @@ package Test2::Tools::PDL;
 
 # ABSTRACT: Test2 tools for verifying Perl Data Language piddles
 
+use 5.010;
 use strict;
 use warnings;
 
@@ -12,14 +13,15 @@ use Scalar::Util qw(blessed);
 use Test2::API qw(context);
 use Test2::Compare qw(compare strict_convert);
 use Test2::Compare::Float;
-use Test2::Tools::Compare qw(within string);
+use Test2::Tools::Compare qw(number within string);
 use Test2::Util::Table qw(table);
 use Test2::Util::Ref qw(render_ref);
 
 use parent qw/Exporter/;
 our @EXPORT = qw(pdl_ok pdl_is);
 
-our $TOLERANCE = $Test2::Compare::Float::DEFAULT_TOLERANCE;
+use constant DEFAULT_TOLERANCE => $Test2::Compare::Float::DEFAULT_TOLERANCE;
+our $TOLERANCE = DEFAULT_TOLERANCE;
 
 =func pdl_ok($thing, $name)
 
@@ -99,10 +101,12 @@ sub convert {
 
     if ( not ref($check) ) {
         if ($is_numeric) {
-            return within( $check, $TOLERANCE );
+            return ( ( $TOLERANCE // 0 ) == 0
+                ? number($check)
+                : within( $check, $TOLERANCE ) );
         }
         else {
-            return string($check);
+              return string($check);
         }
     }
     return strict_convert(@_);
@@ -134,10 +138,19 @@ This module can be configured by some module variables.
 
 =head2 TOLERANCE
 
-Default is same as C<$Test2::Compare::Float::DEFAULT_TOLERANCE>, which is
-C<1e-8>.
+Defaultly it's same as C<$Test2::Compare::Float::DEFAULT_TOLERANCE>, which
+is C<1e-8>. You can override it to adjust the tolerance of numeric
+comparison. The behavior is like L<Test2::Tools::Compare/within>.
 
     $Test2::Tools::PDL::TOLERANCE = 0.01;
+
+You can set this variable to 0 to force exact numeric comparison. In this
+case the behavior is like L<Test2::Tools::Compare/number>.
+
+    {
+        local $Test2::Tools::PDL::TOLERANCE = 0;
+        ...
+    }
 
 =head1 SEE ALSO
 
