@@ -8,16 +8,18 @@ use warnings;
 
 # VERSION
 
+use PDL::Core;
+use PDL::Lite;
+use PDL::Primitive qw(which);
+use PDL::Types;
 use Safe::Isa;
 use Scalar::Util qw(blessed);
 use Test2::API qw(context);
-use Test2::Compare qw(compare strict_convert);
+use Test2::Compare qw(compare strict_convert convert);
 use Test2::Compare::Float;
 use Test2::Tools::Compare qw(number within string);
 use Test2::Util::Table qw(table);
 use Test2::Util::Ref qw(render_ref);
-
-use Test2::Compare::PDL;
 
 use parent qw/Exporter/;
 our @EXPORT = qw(pdl_ok pdl_is);
@@ -82,59 +84,131 @@ sub pdl_is {
         return 0;
     }
 
-    my $is_numeric = !( $exp->type eq 'byte' or $exp->$_DOES('PDL::SV') );
+    # compare dimensions
+    my @exp_dims   = $exp->dims;
+    my @got_dims   = $got->dims;
+    my $delta_dims = compare( \@got_dims, \@exp_dims, \&strict_convert );
 
-    my $delta = compare(
-        $got, $exp,
-        sub {
-            convert(
-                $_[0],
-                {
-                    implicit_end => 1,
-                    use_regex    => 0,
-                    use_code     => 0,
-                    is_numeric   => $is_numeric
-                }
+    if ($delta_dims) {
+        $ctx->ok( 0, $name,
+            [ $delta_dims->table, 'Dimensions do not match', @diag ] );
+        $ctx->release;
+        return 0;
+    }
+
+    # compare isbad
+    my $both_bad;
+    if ( $got->badflag or $exp->badflag ) {
+        my $delta_isbad =
+          compare( $got->isbad->unpdl, $exp->isbad->unpdl, \&strict_convert );
+
+        if ($delta_isbad) {
+            $ctx->ok(
+                0, $name,
+                [
+                    $delta_isbad->table, 'Bad value patterns do not match',
+                    @diag
+                ]
             );
+            $ctx->release;
+            return 0;
         }
-    );
 
-    if ($delta) {
-        $ctx->ok( 0, $name, [ $delta->table, @diag ] );
+        $both_bad = ( $got->isbad & $exp->isbad );
+    }
+
+    # Compare data values.
+    # 
+    # Here we directly compare the $got and $exp's unpdl via standard
+    # Test2::Compare::Array, this way is slower but does not require the
+    # effort for diag message. Another possible approach would be checking
+    # if ($got == $exp) has all ones, but that needs further generating
+    # the diag message ourselves.
+    my $is_numeric = !( $exp->type eq 'byte' or $exp->$_DOES('PDL::SV') );
+    my $converter_scalar = !$is_numeric
+        ? \&string : ( $got->type < PDL::float and $exp->type < PDL::float )
+        ? \&number 
+        : sub { within( $_[0], $TOLERANCE ) } ;
+
+    my $delta_equal  = compare( $got->unpdl, $exp->unpdl,
+            gen_convert->($both_bad, $converter_scalar) );
+    if ($delta_equal) {
+        $ctx->ok( 0, $name,
+            [ $delta_equal->table, 'Values do not match', @diag ] );
     }
     else {
         $ctx->ok( 1, $name );
     }
 
     $ctx->release;
-    return !$delta;
+    return !$delta_equal;
 }
 
-sub convert {
-    my ( $thing, $config ) = @_;
-    $config //= {};
+sub gen_convert {
+    my ($both_bad, $converter_scalar) = @_;
 
-    my $is_numeric = $config->{is_numeric};
+    unless (defined $both_bad) {
+        return sub {
+            my ($check) = @_;
 
-    if ( $thing->$_DOES('PDL') ) {
-        return Test2::Compare::PDL->new(
-            inref => $thing,
-            $config->{implicit_end} ? ( ending => 1 ) : ()
-        );
+            if ( not ref($check) ) {
+                return $converter_scalar->(@_);
+            } else {
+                return strict_convert(@_);
+            }
+        };
     }
-    elsif ( not ref($thing) ) {
-        if ($is_numeric) {
-            return (
-                ( $TOLERANCE // 0 ) == 0
-                ? number($thing)
-                : within( $thing, $TOLERANCE )
-            );
-        }
-        else {
-            return string($thing);
-        }
+
+    # pdl dimensions is in reversion to array
+    if ( $both_bad->ndims > 1 ) {
+        $both_bad = $both_bad->transpose;
     }
-    return strict_convert(@_);
+
+    # Have a state in the subroutine, so it knows which indices to ignore.
+    return sub {
+        my ($check) = @_;
+
+        unless ( defined $check and ref($check) eq 'ARRAY' ) {
+            return strict_convert($check);
+        }
+
+        # get number of dimensions of $check
+        my $check_ndims = 0;
+        my $tmp         = $check;
+        while ( defined $tmp and ref($tmp) eq 'ARRAY' ) {
+            $check_ndims += 1;
+            $tmp = $tmp->[0];
+        }
+
+        state $indices = [ (-1) x $both_bad->ndims ];
+
+        my $indices_idx = $both_bad->ndims - $check_ndims - 1;
+        if ( $indices_idx < $#$indices ) {
+
+            # reset indices of later dimensions
+            for ( $indices_idx + 1 .. $#$indices ) {
+                $indices->[$_] = -1;
+            }
+        }
+        $indices->[$indices_idx] += 1;
+
+        # implicit_end has be 0 as otherwise it fails in case bad is at end
+        # of piddle.
+        my $converted = convert( $check,
+            { implicit_end => 0, use_regex => 0, use_code => 0 } );
+
+        # last dimension
+        if ( $indices_idx == $both_bad->ndims - 2 ) {
+            my $order =
+                $indices_idx >= 0
+              ? $both_bad->index( @$indices[ 0 .. $indices_idx ] )
+              : $both_bad;
+            $order = which( !$order )->unpdl;
+            $converted->set_order($order);
+        }
+
+        return $converted;
+    };
 }
 
 1;
@@ -164,13 +238,13 @@ This module can be configured by some module variables.
 =head2 TOLERANCE
 
 Defaultly it's same as C<$Test2::Compare::Float::DEFAULT_TOLERANCE>, which
-is C<1e-8>. You can override it to adjust the tolerance of numeric
-comparison. The behavior is like L<Test2::Tools::Compare/within>.
+is C<1e-8>. For piddle of float types piddles the tolerance is applied for
+comparison.
 
     $Test2::Tools::PDL::TOLERANCE = 0.01;
 
-You can set this variable to 0 to force exact numeric comparison. In this
-case the behavior is like L<Test2::Tools::Compare/number>.
+You can set this variable to 0 to force exact numeric comparison. For
+example,
 
     {
         local $Test2::Tools::PDL::TOLERANCE = 0;

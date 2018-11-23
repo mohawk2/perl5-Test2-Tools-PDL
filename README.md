@@ -47,15 +47,15 @@ This module can be configured by some module variables.
 ## TOLERANCE
 
 Defaultly it's same as `$Test2::Compare::Float::DEFAULT_TOLERANCE`, which
-is `1e-8`. You can override it to adjust the tolerance of numeric
-comparison. The behavior is like ["within" in Test2::Tools::Compare](https://metacpan.org/pod/Test2::Tools::Compare#within).
+is `1e-8`. For piddle of float types piddles the tolerance is applied for
+comparison.
 
 ```
 $Test2::Tools::PDL::TOLERANCE = 0.01;
 ```
 
-You can set this variable to 0 to force exact numeric comparison. In this
-case the behavior is like ["number" in Test2::Tools::Compare](https://metacpan.org/pod/Test2::Tools::Compare#number).
+You can set this variable to 0 to force exact numeric comparison. For
+example,
 
 ```
 {
