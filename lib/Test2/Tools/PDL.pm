@@ -64,12 +64,12 @@ sub pdl_is {
     my $ctx = context();
 
     my $gotname = render_ref($got);
-    unless ( $got->$_DOES('PDL') ) {
+    unless ( $got->$_isa('PDL') ) {
         $ctx->ok( 0, $name, ["First argument '$gotname' is not a piddle."] );
         $ctx->release;
         return 0;
     }
-    unless ( $exp->$_DOES('PDL') ) {
+    unless ( $exp->$_isa('PDL') ) {
         my $expname = render_ref($exp);
         $ctx->ok( 0, $name, ["Second argument '$expname' is not a piddle."] );
         $ctx->release;
@@ -77,7 +77,7 @@ sub pdl_is {
     }
 
     my $exp_class = ref($exp);
-    unless ( $got->$_DOES($exp_class) ) {
+    if ( ref($got) ne $exp_class ) {
         $ctx->ok( 0, $name,
             ["'$gotname' does not match the expected type '$exp_class'."] );
         $ctx->release;
