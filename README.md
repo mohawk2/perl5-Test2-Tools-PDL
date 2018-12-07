@@ -6,7 +6,7 @@ Test2::Tools::PDL - Test2 tools for verifying Perl Data Language piddles
 
 # VERSION
 
-version 0.0002
+version 0.0002\_01
 
 # SYNOPSIS
 
