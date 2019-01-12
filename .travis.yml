@@ -4,5 +4,7 @@ perl:
   - "5.20"
   - "5.14"
 sudo: false
+env:
+  - PERL_USE_UNSAFE_INC=1
 before_install:
   - eval $(curl https://travis-perl.github.io/init) --auto
