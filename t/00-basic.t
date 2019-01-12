@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+use t::lib qw(diag_message);
+
 use PDL::Core qw(pdl);
 use Safe::Isa;
 
@@ -10,12 +12,6 @@ use Test2::API qw(intercept);
 use Test2::V0;
 
 use Test2::Tools::PDL;
-
-# get message from events
-sub diag_message {
-    my ($events) = @_;
-    return join( "\n", map { $_->$_call_if_can('message') } @$events );
-}
 
 subtest pdl_ok => sub {
     my $test_name = 'this is a PDL';

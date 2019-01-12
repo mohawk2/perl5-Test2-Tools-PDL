@@ -124,13 +124,27 @@ sub pdl_is {
     # effort for diag message. Another possible approach would be checking
     # if ($got == $exp) has all ones, but that needs further generating
     # the diag message ourselves.
-    my $is_numeric = !( $exp->type eq 'byte' or $exp->$_DOES('PDL::SV') );
+    my $is_numeric = !(
+        List::Util::any { $exp->$_DOES($_) }
+            qw(PDL::SV PDL::Factor PDL::DateTime)
+        or $exp->type eq 'byte'
+    );
     my $converter_scalar = !$is_numeric
         ? \&string : ( $got->type < PDL::float and $exp->type < PDL::float )
         ? \&number 
         : sub { within( $_[0], $TOLERANCE ) } ;
 
-    my $delta_equal  = compare( $got->unpdl, $exp->unpdl,
+    state $my_unpdl = sub {
+        my ($x) = @_;
+
+        if ($x->$_DOES('PDL::DateTime')) {
+            return $x->dt_unpdl();
+        } else {
+            return $x->unpdl;
+        }
+    };
+
+    my $delta_equal  = compare( $my_unpdl->($got), $my_unpdl->($exp),
             gen_convert->($both_bad, $converter_scalar) );
     if ($delta_equal) {
         $ctx->ok( 0, $name,
