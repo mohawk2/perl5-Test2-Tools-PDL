@@ -72,6 +72,10 @@ example,
 
 Stephan Loyd <sloyd@cpan.org>
 
+# CONTRIBUTOR
+
+Mohammad S Anwar <manwar@cpan.org>
+
 # COPYRIGHT AND LICENSE
 
 This software is copyright (c) 2018 by Stephan Loyd.
