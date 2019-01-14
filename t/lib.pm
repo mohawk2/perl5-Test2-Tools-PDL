@@ -6,7 +6,7 @@ use warnings;
 use Exporter qw(import);
 our @EXPORT_OK = qw(diag_message);
 
-use Safe::Isa;
+use Safe::Isa 1.000007;
 
 # get message from events
 sub diag_message {

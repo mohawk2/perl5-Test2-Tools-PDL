@@ -2,7 +2,7 @@ Revision history
 
 0.0002_01   TBD
     - Support PDL::DateTime better.
-    - Update required version for Test2::V0.
+    - Update required version for Test2::V0 and Safe::Isa.
 
 0.0002      2018-12-02
     - Reimplement many things.
