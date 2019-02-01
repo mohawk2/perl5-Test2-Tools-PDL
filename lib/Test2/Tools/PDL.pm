@@ -37,7 +37,7 @@ sub pdl_ok {
     my ( $thing, $name ) = @_;
     my $ctx = context();
 
-    unless ( $thing->$_DOES('PDL') ) {
+    unless ( $thing->$_isa('PDL') ) {
         my $thingname = render_ref($thing);
         $ctx->ok( 0, $name, ["'$thingname' is not a piddle."] );
         $ctx->release;
@@ -125,7 +125,7 @@ sub pdl_is {
     # if ($got == $exp) has all ones, but that needs further generating
     # the diag message ourselves.
     my $is_numeric = !(
-        List::Util::any { $exp->$_DOES($_) }
+        List::Util::any { $exp->$_isa($_) }
             qw(PDL::SV PDL::Factor PDL::DateTime)
         or $exp->type eq 'byte'
     );
@@ -137,7 +137,7 @@ sub pdl_is {
     state $my_unpdl = sub {
         my ($x) = @_;
 
-        if ($x->$_DOES('PDL::DateTime')) {
+        if ($x->$_isa('PDL::DateTime')) {
             return $x->dt_unpdl();
         } else {
             return $x->unpdl;

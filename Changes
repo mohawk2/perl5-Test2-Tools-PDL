@@ -1,6 +1,9 @@
 Revision history
 
-0.0002_01   TBD
+0.0002_02   2019-02-01
+    - Trying to fix a weird Safe::Isa $_DOES() on NetBSD.
+
+0.0002_01   2019-01-14
     - Support PDL::DateTime better.
     - Update required version for Test2::V0 and Safe::Isa.
 
