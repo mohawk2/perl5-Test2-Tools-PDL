@@ -3,14 +3,18 @@
 use strict;
 use warnings;
 
+use PDL::Core qw(pdl);
+
 use Test2::API qw(intercept);
 use Test2::V0;
 
 use Test2::Tools::PDL;
 
-plan skip_all => 'PDL::SV has to be patched to get this to work';
-
-eval { require PDL::SV; };
+eval {
+    require Alt::Data::Frame::ButMore;
+    require PDL::SV;
+    require PDL::Lite;
+};
 if ($@) { plan skip_all => 'Requires PDL::SV'; }
 
 subtest pdlsv => sub {

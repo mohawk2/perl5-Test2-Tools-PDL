@@ -12,7 +12,10 @@ use Test2::V0;
 
 use Test2::Tools::PDL;
 
-eval { require PDL::DateTime; };
+eval {
+    require PDL::DateTime;
+    require PDL::Lite;
+};
 if ($@) { plan skip_all => 'Requires PDL::DateTime'; }
 
 subtest pdldt => sub {
