@@ -163,20 +163,34 @@ subtest tolerance => sub {
     my $test_name = 'piddle is pdl(1..10)';
 
     my $events1 = intercept {
-        pdl_is( pdl( [ 1, 2 ] ), pdl( [ 1.01, 1.99 ] ), $test_name );
+        pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
     };
 
     my $event_ok1 = $events1->[0];
     ok( !$event_ok1->pass, 'pdl_is() with default tolerance' );
 
-    local $Test2::Tools::PDL::TOLERANCE = 0.02;
+    {
+        local $Test2::Tools::PDL::TOLERANCE = 0.1;
 
-    my $events2 = intercept {
-        pdl_is( pdl( [ 1, 2 ] ), pdl( [ 1.01, 1.99 ] ), $test_name );
-    };
+        my $events2 = intercept {
+            pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
+        };
 
-    my $event_ok2 = $events2->[0];
-    ok( $event_ok2->pass, 'pdl_is() with large tolerance' );
+        my $event_ok2 = $events2->[0];
+        ok( $event_ok2->pass, '$TOLERANCE' );
+    }
+
+    {
+        local $Test2::Tools::PDL::TOLERANCE = 0;
+        local $Test2::Tools::PDL::TOLERANCE_REL = 1e-2;
+
+        my $events2 = intercept {
+            pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
+        };
+
+        my $event_ok2 = $events2->[0];
+        ok( $event_ok2->pass, '$TOLERANCE_REL' );
+    }
 };
 
 done_testing;
