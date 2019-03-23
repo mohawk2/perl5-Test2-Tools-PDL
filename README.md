@@ -6,7 +6,7 @@ Test2::Tools::PDL - Test2 tools for verifying Perl Data Language piddles
 
 # VERSION
 
-version 0.0002\_02
+version 0.0002\_03
 
 # SYNOPSIS
 
@@ -44,22 +44,22 @@ This module contains tools for verifying [PDL](https://metacpan.org/pod/PDL) pid
 
 This module can be configured by some module variables.
 
-## TOLERANCE
+## TOLERANCE, TOLERANCE\_REL
 
-Defaultly it's same as `$Test2::Compare::Float::DEFAULT_TOLERANCE`, which
-is `1e-8`. For piddle of float types piddles the tolerance is applied for
-comparison.
+These two variables are used when comparing float piddles. For
+`pdl_is($got, $exp, ...)`, the effective tolerance is
+`$TOLERANCE + $TOLERANCE_REL * $exp`.
 
-```
-$Test2::Tools::PDL::TOLERANCE = 0.01;
-```
+Default value of `$TOLERANCE` is same as
+`$Test2::Compare::Float::DEFAULT_TOLERANCE`, which is `1e-8`.
+Default value of `$TOLERANCE_REL` is 0.
 
-You can set this variable to 0 to force exact numeric comparison. For
-example,
+For example, to use only relative tolerance,
 
 ```
 {
     local $Test2::Tools::PDL::TOLERANCE = 0;
+    local $Test2::Tools::PDL::TOLERANCE_REL = 1e-6;
     ...
 }
 ```

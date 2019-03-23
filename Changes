@@ -1,5 +1,9 @@
 Revision history
 
+0.0002_03   2019-03-23
+    - Simplify value comparison implementation.
+    - Support both $TOLERANCE and $TOLERANCE_REL
+
 0.0002_02   2019-02-01
     - Trying to fix a weird Safe::Isa $_DOES() on NetBSD.
 
