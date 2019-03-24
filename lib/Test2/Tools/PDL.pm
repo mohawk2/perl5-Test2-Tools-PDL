@@ -8,16 +8,14 @@ use warnings;
 
 # VERSION
 
-use PDL::Core;
-use PDL::Lite;
+use PDL::Lite ();
 use PDL::Primitive qw(which);
 use PDL::Types;
+
 use Safe::Isa;
 use Scalar::Util qw(blessed);
 use Test2::API qw(context);
-use Test2::Compare qw(compare strict_convert convert);
-use Test2::Compare::Float;
-use Test2::Tools::Compare qw(number within string);
+use Test2::Compare qw(compare strict_convert);
 use Test2::Util::Table qw(table);
 use Test2::Util::Ref qw(render_ref);
 
