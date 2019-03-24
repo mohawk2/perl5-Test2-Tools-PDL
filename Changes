@@ -1,15 +1,9 @@
 Revision history
 
-0.0002_03   2019-03-23
+0.0003      2019-03-24
     - Simplify value comparison implementation.
-    - Support both $TOLERANCE and $TOLERANCE_REL
-
-0.0002_02   2019-02-01
-    - Trying to fix a weird Safe::Isa $_DOES() on NetBSD.
-
-0.0002_01   2019-01-14
-    - Support PDL::DateTime better.
-    - Update required version for Test2::V0 and Safe::Isa.
+    - Support both $TOLERANCE and $TOLERANCE_REL.
+    - Fix a couple issues caused by some dependencies.
 
 0.0002      2018-12-02
     - Reimplement many things.
