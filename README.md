@@ -6,7 +6,7 @@ Test2::Tools::PDL - Test2 tools for verifying Perl Data Language piddles
 
 # VERSION
 
-version 0.0003
+version 0.0004
 
 # SYNOPSIS
 
@@ -48,7 +48,7 @@ This module can be configured by some module variables.
 
 These two variables are used when comparing float piddles. For
 `pdl_is($got, $exp, ...)`, the effective tolerance is
-`$TOLERANCE + $TOLERANCE_REL * $exp`.
+`$TOLERANCE + abs($TOLERANCE_REL * $exp)`.
 
 Default value of `$TOLERANCE` is same as
 `$Test2::Compare::Float::DEFAULT_TOLERANCE`, which is `1e-8`.
