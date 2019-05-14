@@ -125,7 +125,8 @@ sub pdl_is {
         if ( $is_numeric
             and ( $exp->type >= PDL::float or $got->type >= PDL::float ) )
         {
-            $diff = (($got - $exp)->abs > $TOLERANCE + $TOLERANCE_REL * $exp);
+            $diff = ( ( $got - $exp )->abs >
+                  $TOLERANCE + ( $TOLERANCE_REL * $exp )->abs );
         }
         else {
             $diff = ( $got != $exp );
@@ -208,7 +209,7 @@ This module can be configured by some module variables.
 
 These two variables are used when comparing float piddles. For
 C<pdl_is($got, $exp, ...)>, the effective tolerance is
-C<$TOLERANCE + $TOLERANCE_REL * $exp>.
+C<$TOLERANCE + abs($TOLERANCE_REL * $exp)>.
 
 Default value of C<$TOLERANCE> is same as
 C<$Test2::Compare::Float::DEFAULT_TOLERANCE>, which is C<1e-8>.
