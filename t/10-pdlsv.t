@@ -36,8 +36,9 @@ subtest pdlsv => sub {
                 PDL::SV->new( [qw(foo bar)] ), $test_name );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass, 'pdl_is($different_pdlsv) is expected to fail' );
+        my $event = $events->[0];
+        ok( $event->isa('Test2::Event::Fail'),
+            'pdl_is($different_pdlsv) is expected to fail' );
     }
     {
         my $events = intercept {
@@ -45,8 +46,11 @@ subtest pdlsv => sub {
                 PDL::SV->new( [qw(foo bar)] ), $test_name );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass, 'pdl_is($pdl, $pdlsv) is expected to fail' );
+        my $event = $events->[0];
+        ok(
+            $event->isa('Test2::Event::Fail'),
+            'pdl_is($pdl, $pdlsv) is expected to fail'
+        );
     }
 };
 

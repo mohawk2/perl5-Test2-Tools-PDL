@@ -42,8 +42,9 @@ subtest pdldt => sub {
             );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass, 'pdl_is($different_pdldt)' );
+        my $event_fail = $events->[0];
+        ok( $event_fail->isa('Test2::Event::Fail'),
+            'pdl_is($different_pdldt)' );
 
         my $diag_message = diag_message($events);
         diag($diag_message);
@@ -59,8 +60,11 @@ subtest pdldt => sub {
             );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass, 'pdl_is($pdl, $pdldt) is expected to fail' );
+        my $event_fail = $events->[0];
+        ok(
+            $event_fail->isa('Test2::Event::Fail'),
+            'pdl_is($pdl, $pdldt) is expected to fail'
+        );
     }
 };
 

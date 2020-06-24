@@ -11,7 +11,13 @@ use Safe::Isa 1.000007;
 # get message from events
 sub diag_message {
     my ($events) = @_;
-    return join( "\n", map { $_->$_call_if_can('message') } @$events );
+    return join(
+        "\n",
+        map {
+            my $info = $_->facet_data->{info};
+            map { $_->{details} } @$info;
+        } @$events
+    );
 }
 
 1;

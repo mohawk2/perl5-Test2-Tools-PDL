@@ -25,8 +25,8 @@ subtest pdlsv => sub {
                 PDL::Factor->new( [qw(foo bar foo)] ), $test_name );
         };
 
-        my $event_ok = $events->[0];
-        ok( $event_ok->pass, 'pdl_is($pdlfactor)' );
+        my $event = $events->[0];
+        ok( $event->pass, 'pdl_is($pdlfactor)' );
     }
     {
         my $events = intercept {
@@ -34,8 +34,9 @@ subtest pdlsv => sub {
                 PDL::Factor->new( [qw(foo bar baz)] ), $test_name );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass, 'pdl_is($different_values) is expected to fail' );
+        my $event = $events->[0];
+        ok( $event->isa('Test2::Event::Fail'),
+            'pdl_is($different_values) is expected to fail' );
     }
     {
         my $events = intercept {
@@ -46,8 +47,8 @@ subtest pdlsv => sub {
             );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass,
+        my $event = $events->[0];
+        ok( $event->isa('Test2::Event::Fail'),
             'pdl_is($different_level_order) is expected to fail' );
     }
     {
@@ -56,8 +57,8 @@ subtest pdlsv => sub {
                 PDL::Factor->new( [qw(foo baz foo)] ), $test_name );
         };
 
-        my $event_ok = $events->[0];
-        ok( !$event_ok->pass,
+        my $event = $events->[0];
+        ok( $event->isa('Test2::Event::Fail'),
             'pdl_is($different_level_name) is expected to fail' );
     }
 };
