@@ -34,7 +34,7 @@ Checks that piddle `$got` is same as `$exp`.
 
 Now this method is internally similar as
 `is($got->unpdl, $exp->unpdl)`. It's possible to work with both
-numeric PDLs as well as non-numeric PDLs (like [PDL::Char](https://metacpan.org/pod/PDL%3A%3AChar), [PDL::SV](https://metacpan.org/pod/PDL%3A%3ASV)).
+numeric PDLs as well as non-numeric PDLs (like [PDL::Char](https://metacpan.org/pod/PDL::Char), [PDL::SV](https://metacpan.org/pod/PDL::SV)).
 
 # DESCRIPTION 
 
@@ -66,7 +66,7 @@ For example, to use only relative tolerance,
 
 # SEE ALSO
 
-[PDL](https://metacpan.org/pod/PDL), [Test2::Suite](https://metacpan.org/pod/Test2%3A%3ASuite), [Test::PDL](https://metacpan.org/pod/Test%3A%3APDL)
+[PDL](https://metacpan.org/pod/PDL), [Test2::Suite](https://metacpan.org/pod/Test2::Suite), [Test::PDL](https://metacpan.org/pod/Test::PDL)
 
 # AUTHOR
 

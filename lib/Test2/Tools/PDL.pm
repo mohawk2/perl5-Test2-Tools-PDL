@@ -14,8 +14,8 @@ use PDL::Types;
 
 use Safe::Isa;
 use Scalar::Util qw(blessed);
-use Test2::API qw(context);
-use Test2::Compare qw(compare strict_convert);
+use Test2::API 1.302175 qw(context);
+use Test2::Compare 0.000130 qw(compare strict_convert);
 use Test2::Util::Table qw(table);
 use Test2::Util::Ref qw(render_ref);
 

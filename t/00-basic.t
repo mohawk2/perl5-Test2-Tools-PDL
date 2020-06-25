@@ -3,174 +3,156 @@
 use strict;
 use warnings;
 
-use t::lib qw(diag_message);
-
 use PDL::Core qw(pdl);
-use Safe::Isa;
-
-use Test2::API qw(intercept);
 use Test2::V0;
-
 use Test2::Tools::PDL;
 
+sub fail_details {
+    my ( $name, $details ) = @_;
+    unless ( ref($details) eq 'ARRAY' ) {
+        $details = [$details];
+    }
+
+    event Fail => sub {
+        call facet_data => hash {
+            field info => array {
+                map {
+                    item hash {
+                        field details => $_;
+                        etc;
+                    };
+                    etc;
+                    ();
+                } @$details;
+            };
+            etc;
+        };
+        call name => $name;
+    };
+}
+
 subtest pdl_ok => sub {
-    my $test_name = 'this is a PDL';
+    my $events = intercept {
+        def ok => ( pdl_ok( pdl( 1 .. 10 ) ), '1 arg pass' );
+        def ok => ( pdl_ok( pdl( 1 .. 10 ), "simple pass" ), 'simple pass' );
+        def ok => ( !pdl_ok( [ 1 .. 10 ], "type fail" ), 'type fail' );
+        def ok => ( !pdl_ok( undef, "undef fail" ), 'undef fail' );
+    };
 
-    {
-        my $events = intercept {
-            pdl_ok( pdl( 1 .. 10 ), $test_name );
-        };
+    do_def;
 
-        my $event_ok = $events->[0];
-        ok( $event_ok->pass, 'pdl_ok($pdl)' );
-        is( $event_ok->name, $test_name, 'pdl_ok() name' );
-    }
-
-    {
-        my $events = intercept {
-            pdl_ok( [ 1 .. 10 ], $test_name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_ok($non_pdl) fails' );
-        is( $event->name, $test_name, 'pdl_ok() name' );
-    }
-
-    {
-        my $events = intercept {
-            pdl_ok( undef, $test_name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_ok(undef) fails' );
-        is( $event->name, $test_name, 'pdl_ok() name' );
-    }
+    like(
+        $events,
+        array {
+            event Ok => sub {
+                call pass => T();
+                call name => undef;
+            };
+            event Ok => sub {
+                call pass => T();
+                call name => 'simple pass';
+            };
+            fail_details( 'type fail',  qr/is not a piddle/ );
+            fail_details( 'undef fail', qr/is not a piddle/ );
+            end;
+        },
+        "got expected events"
+    );
 };
 
 subtest pdl_is => sub {
     my $test_name = 'pdl(1..10)';
 
-    {
-        my $events = intercept {
-            pdl_is( pdl( 1 .. 10 ), pdl( 1 .. 10 ), $test_name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->pass, 'pdl_is($pdl)' );
-        is( $event->name, $test_name, 'pdl_is() name' );
-    }
-
-    {
-        my $events = intercept {
-            pdl_is( pdl( 1 .. 10 ), pdl( [ 1 .. 5 ] ), $test_name );
-        };
-
-        my $event = $events->[0];
-        diag( ref($event) );
-        diag( $event->isa('Test2::Event::Fail') );
-
-        #ok( $event->isa('Test2::Event::Fail'), 'pdl_is($different_pdl)' );
-        is( $event->name, $test_name, 'pdl_is() name' );
-        my $diag_message = diag_message($events);
-        like(
-            $diag_message, qr/^\QDimensions do not match\E\s*
-                                ^\Q+--\E    # delta table
-                                /msx,
-            'diag message'
+    my $events = intercept {
+        def ok => ( pdl_is( pdl( 1 .. 10 ), pdl( 1 .. 10 ) ), '2 args pass' );
+        def ok => (
+            pdl_is( pdl( 1 .. 10 ), pdl( 1 .. 10 ), 'simple pass' ),
+            'simple pass'
         );
-    }
-
-    {
-        my $name   = 'piddle([ [1..5], [6..10] ])';
-        my $events = intercept {
-            pdl_is( pdl( 1 .. 10 ), pdl( [ [ 1 .. 5 ], [ 6 .. 10 ] ] ), $name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_is($different_dims)' );
-        is( $event->name, $name, 'pdl_is() name' );
-        my $diag_message = diag_message($events);
-        like(
-            $diag_message, qr/^\QDimensions do not match\E\s*
-                                ^\Q+--\E    # delta table
-                                /msx,
-            'diag message'
+        def ok => (
+            !pdl_is( pdl( 1 .. 10 ), pdl( [ 1 .. 5 ] ), 'dimensions fail' ),
+            'dimentions fail'
         );
-        diag($diag_message);
-    }
+        def ok => (
+            !pdl_is(
+                pdl( 1 .. 10 ),
+                pdl( [ [ 1 .. 5 ], [ 6 .. 10 ] ] ),
+                'dimensions fail 2'
+            ),
+            'dimensions fail 2'
+        );
+        def ok => (
+            !pdl_is(
+                pdl( 1 .. 10 ),
+                pdl( [ 1 .. 4, 4, 6 .. 10 ] ),
+                'values fail'
+            ),
+            'values fail'
+        );
+        def ok => (
+            !pdl_is( [ 1 .. 10 ], pdl( [ 1 .. 10 ] ), 'type fail' ),
+            'type fail'
+        );
+        def ok =>
+          ( !pdl_is( undef, pdl( [ 1 .. 10 ] ), 'undef fail' ), 'undef fail' );
+        def ok => (
+            pdl_is(
+                pdl( [ 0 .. 2 ] )->setbadat(2),
+                pdl( [ 0, 1, 'nan' ] )->setnantobad,
+                'bad values pass'
+            ),
+            'bad values pass'
+        );
+        def ok => (
+            pdl_is(
+                pdl( [ [ 1 .. 5 ], [ 6 .. 10 ] ] )->setbadat( 2, 1 ),
+                pdl( [ 1 .. 5 ], [ 6 .. 10 ] )->setbadat( 2, 1 ),
+                'bad values pass 2'
+            ),
+            'bad values pass 2'
+        );
+        def ok => (
+            !pdl_is(
+                pdl( [ 0 .. 2 ] )->setbadat(2),
+                pdl( [ 0, 1, 3 ] )->setnantobad,
+                'bad values fail'
+            ),
+            'bad values fail'
+        );
+    };
 
-    {
-        my $events = intercept {
-            pdl_is( pdl( 1 .. 10 ),
-                pdl( [ 1 .. 4, 4, 6, 7, 9, 8, 10 ] ), $test_name );
-        };
+    do_def;
 
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_is($different_pdl)' );
-        is( $event->name, $test_name, 'pdl_is() name' );
-
-        my $diag_message = diag_message($events);
-        like( $diag_message, qr/^Values do not match/m, 'diag message' );
-        diag($diag_message);
-    }
-
-    {
-        my $events = intercept {
-            pdl_is( [ 1 .. 10 ], pdl( [ 1 .. 10 ] ), $test_name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_is($non_pdl)' );
-        is( $event->name, $test_name, 'pdl_is() name' );
-        like( diag_message($events), qr/^First argument/m, 'diag message' );
-    }
-
-    {
-        my $events = intercept {
-            pdl_is( undef, pdl( [ 1 .. 10 ] ), $test_name );
-        };
-
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_is(undef)' );
-        is( $event->name, $test_name, 'pdl_is() name' );
-        like( diag_message($events), qr/^First argument/m, 'diag message' );
-    }
-
-    {
-        my $name   = "piddle1d with bad values bad at tail";
-        my $events = intercept {
-            pdl_is( pdl( [ 0 .. 2 ] )->setbadat(2),
-                pdl( [ 0, 1, 3 ] )->setnantobad, $name );
-        };
-        my $event = $events->[0];
-        ok( $event->isa('Test2::Event::Fail'), 'pdl_is($piddle1d_with_bad)' );
-        is( $event->name, $name, 'pdl_is() name' );
-        like( diag_message($events), qr/^Bad value patterns do not match/m,
-            'diag message' );
-    }
-
-    {
-        my $name   = "piddle1d with bad values bad at tail";
-        my $events = intercept {
-            pdl_is( pdl( [ 0 .. 2 ] )->setbadat(2),
-                pdl( [ 0, 1, 'nan' ] )->setnantobad, $name );
-        };
-        my $event = $events->[0];
-        ok( $event->pass, 'pdl_is($piddle1d_with_bad)' );
-        is( $event->name, $name, 'pdl_is() name' );
-    }
-
-    {
-        my $name = "piddle2d with bad values";
-
-        my $events = intercept {
-            pdl_is( pdl( [ [ 1 .. 5 ], [ 6 .. 10 ] ] )->setbadat( 2, 1 ),
-                pdl( [ 1 .. 5 ], [ 6 .. 10 ] )->setbadat( 2, 1 ), $name );
-        };
-        my $event = $events->[0];
-        ok( $event->pass, 'pdl_is($piddle2d_with_bad)' );
-        is( $event->name, $name, 'pdl_is() name' );
-    }
+    like(
+        $events,
+        array {
+            event Ok => sub {
+                call pass => T();
+                call name => undef;
+            };
+            event Ok => sub {
+                call pass => T();
+                call name => 'simple pass';
+            };
+            fail_details( 'dimensions fail',   qr/Dimensions do not match/ );
+            fail_details( 'dimensions fail 2', qr/Dimensions do not match/ );
+            fail_details( 'values fail',       qr/Values do not match/ );
+            fail_details( 'type fail',         qr/is not a piddle/ );
+            fail_details( 'undef fail',        qr/is not a piddle/ );
+            event Ok => sub {
+                call pass => T();
+                call name => 'bad values pass';
+            };
+            event Ok => sub {
+                call pass => T();
+                call name => 'bad values pass 2';
+            };
+            fail_details( 'bad values fail',
+                qr/Bad value patterns do not match/ );
+            end;
+        },
+        "got expected events"
+    );
 };
 
 subtest tolerance => sub {
@@ -178,13 +160,25 @@ subtest tolerance => sub {
 
     {
         my $events = intercept {
-            pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
+            def ok => (
+                !pdl_is(
+                    pdl( [ 10.1, 9.9 ] ),
+                    pdl( [ 10,   10 ] ),
+                    'simple fail'
+                ),
+                'simple fail'
+            );
         };
 
-        my $event = $events->[0];
-        ok(
-            $event->isa('Test2::Event::Fail'),
-            'pdl_is() with default tolerance'
+        do_def;
+
+        like(
+            $events,
+            array {
+                fail_details( 'simple fail', qr/Values do not match/ );
+                end;
+            },
+            "got expected events"
         );
     }
 
@@ -192,11 +186,29 @@ subtest tolerance => sub {
         local $Test2::Tools::PDL::TOLERANCE = 0.1;
 
         my $events = intercept {
-            pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
+            def ok => (
+                pdl_is(
+                    pdl( [ 10.1, 9.9 ] ),
+                    pdl( [ 10,   10 ] ),
+                    '$TOLERANCE pass'
+                ),
+                '$TOLERANCE pass'
+            );
         };
 
-        my $event = $events->[0];
-        ok( $event->pass, '$TOLERANCE' );
+        do_def;
+
+        like(
+            $events,
+            array {
+                event Ok => sub {
+                    call pass => T();
+                    call name => '$TOLERANCE pass';
+                };
+                end;
+            },
+            "got expected events"
+        );
     }
 
     {
@@ -204,23 +216,41 @@ subtest tolerance => sub {
         local $Test2::Tools::PDL::TOLERANCE_REL = 1e-2;
 
         my $events = intercept {
-            pdl_is( pdl( [ 10.1, 9.9 ] ), pdl( [ 10, 10 ] ), $test_name );
+            def ok => (
+                pdl_is(
+                    pdl( [ 10.1, 9.9 ] ),
+                    pdl( [ 10,   10 ] ),
+                    '$TOLERANCE_REL pass'
+                ),
+                '$TOLERANCE_REL pass'
+            );
+            def ok => (
+                pdl_is(
+                    pdl( [-0.2763423069] ),
+                    pdl( [-0.276342] ),
+                    '$TOLERANCE_REL pass 2'
+                ),
+                '$TOLERANCE_REL pass 2'
+            );
         };
 
-        my $event = $events->[0];
-        ok( $event->pass, '$TOLERANCE_REL' );
-    }
+        do_def;
 
-    {
-        local $Test2::Tools::PDL::TOLERANCE     = 0;
-        local $Test2::Tools::PDL::TOLERANCE_REL = 1e-2;
-
-        my $events2 = intercept {
-            pdl_is( pdl( [-0.2763423069] ), pdl( [-0.276342] ), 'foo' );
-        };
-
-        my $event_ok2 = $events2->[0];
-        ok( $event_ok2->pass, '$TOLERANCE_REL for negative value' );
+        like(
+            $events,
+            array {
+                event Ok => sub {
+                    call pass => T();
+                    call name => '$TOLERANCE_REL pass';
+                };
+                event Ok => sub {
+                    call pass => T();
+                    call name => '$TOLERANCE_REL pass 2';
+                };
+                end;
+            },
+            "got expected events"
+        );
     }
 };
 
