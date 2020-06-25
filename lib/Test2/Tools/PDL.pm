@@ -47,7 +47,7 @@ sub pdl_ok {
     return 1;
 }
 
-=func pdl_is($got, $exp, $name);
+=func pdl_is($got, $exp, $name)
 
 Checks that piddle C<$got> is same as C<$exp>.
 
