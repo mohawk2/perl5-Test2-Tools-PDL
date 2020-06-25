@@ -28,7 +28,7 @@ pdl_is($got, $expected, 'Same piddle.');
 
 Checks that the given `$thing` is a [PDL](https://metacpan.org/pod/PDL) object.
 
-## pdl\_is($got, $exp, $name);
+## pdl\_is($got, $exp, $name)
 
 Checks that piddle `$got` is same as `$exp`.
 
