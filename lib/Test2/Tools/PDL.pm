@@ -127,7 +127,7 @@ sub pdl_is {
             $diff = ( $got != $exp );
         }
         if ( $exp->badflag ) {
-            $diff->where( $exp->isbad ) .= 0;
+            $diff->where( $exp->isbad ) .= PDL->pdl($diff->type, 0);
         }
     };
     if ($@) {
